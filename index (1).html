@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pay4Broker 运营管理系统</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f4f5f7;--surface:#fff;--surface2:#f0f2f5;--surface3:#e8eaed;--border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.13);--text:#1a1d23;--text2:#5a6178;--text3:#9ba3b8;--accent:#2563eb;--accent-bg:#eff4ff;--green:#059669;--green-bg:#ecfdf5;--amber:#d97706;--amber-bg:#fffbeb;--red:#dc2626;--red-bg:#fef2f2;--purple:#7c3aed;--purple-bg:#f5f3ff;--mono:'DM Mono',monospace;--sans:'Noto Sans SC',sans-serif;--r:10px;--sh:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh}
+.nav{display:flex;align-items:stretch;background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;position:sticky;top:0;z-index:100;box-shadow:var(--sh)}
+.nav-brand{font-family:var(--mono);font-size:13px;color:var(--accent);padding:0 20px 0 0;margin-right:8px;border-right:1px solid var(--border);display:flex;align-items:center;gap:8px;white-space:nowrap;font-weight:500}
+.nav-tab{padding:0 18px;font-size:13px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;height:52px;transition:all .15s;white-space:nowrap}
+.nav-tab:hover{color:var(--text);background:var(--surface2)}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.page{display:none;padding:24px;max-width:1400px;margin:0 auto}
+.page.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px 24px;box-shadow:var(--sh)}
+.card-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:12px;margin-bottom:16px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;box-shadow:var(--sh)}
+.metric-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;font-weight:500}
+.metric-val{font-family:var(--mono);font-size:21px;font-weight:500;color:var(--text);line-height:1}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:5px}
+.up{color:var(--green)!important}.down{color:var(--red)!important}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:960px){.grid2,.grid3{grid-template-columns:1fr}}
+.tbl-wrap{overflow-x:auto}
+.tbl-scroll{max-height:460px;overflow-y:auto}
+.tbl-scroll table thead th{position:sticky;top:0;background:var(--surface2);z-index:2}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:600;white-space:nowrap;background:var(--surface2)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--surface2)}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;white-space:nowrap}
+.b-green{background:var(--green-bg);color:var(--green)}.b-amber{background:var(--amber-bg);color:var(--amber)}
+.b-red{background:var(--red-bg);color:var(--red)}.b-blue{background:var(--accent-bg);color:var(--accent)}
+.b-gray{background:var(--surface2);color:var(--text2)}.b-purple{background:var(--purple-bg);color:var(--purple)}
+input,select,textarea{background:var(--surface);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;color:var(--text);font-family:var(--sans);font-size:13px;width:100%;transition:border .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+textarea{resize:vertical;min-height:64px}
+.form-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.form-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:140px}
+.form-group label{font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.btn{padding:8px 16px;border-radius:7px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-size:13px;cursor:pointer;transition:all .15s;font-family:var(--sans);white-space:nowrap;font-weight:500}
+.btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+.btn-danger{color:var(--red)}.btn-danger:hover{border-color:var(--red);background:var(--red-bg);color:var(--red)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sec-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+.sec-title{font-size:16px;font-weight:600;color:var(--text)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.chip{padding:4px 12px;border-radius:20px;border:1px solid var(--border2);font-size:12px;cursor:pointer;color:var(--text2);transition:all .15s;font-weight:500}
+.chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip:hover:not(.active){border-color:var(--accent);color:var(--accent)}
+.search-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.search-row input{max-width:260px}.search-row select{max-width:170px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:28px;width:580px;max-width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{cursor:pointer;color:var(--text3);font-size:20px;line-height:1;transition:color .15s}
+.modal-close:hover{color:var(--text)}
+.chart-wrap{position:relative}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px}
+.bar-label{width:110px;color:var(--text2);text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+.bar-track{flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.bar-val{width:46px;color:var(--text);text-align:right;font-family:var(--mono);font-size:11px;font-weight:500}
+.hash{font-family:var(--mono);font-size:11px;color:var(--text3);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;cursor:pointer}
+.hash:hover{color:var(--accent);text-decoration:underline}
+.empty{text-align:center;padding:48px 20px;color:var(--text3)}
+.empty-icon{font-size:36px;margin-bottom:10px}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.result-item{background:var(--surface2);border-radius:8px;padding:12px 16px}
+.r-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;font-weight:600}
+.r-val{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--accent)}
+.notice-box{background:var(--green-bg);border:1px solid rgba(5,150,105,.2);border-radius:8px;padding:14px 16px;margin-top:14px;font-size:13px;color:var(--text2);line-height:1.7}
+.formula-box{background:var(--surface2);border-radius:8px;padding:14px 16px;font-family:var(--mono);font-size:12px;color:var(--text2);line-height:2}
+.pie-legend{display:flex;flex-direction:column;gap:7px}
+.pie-legend-item{display:flex;align-items:center;gap:8px;font-size:12px}
+.pie-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.pie-legend-label{color:var(--text2);flex:1}
+.pie-legend-val{font-family:var(--mono);color:var(--text);font-weight:600}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">◆ P4B OPS</div>
+  <div class="nav-tab active" onclick="switchPage('orders')">📊 订单数据</div>
+  <div class="nav-tab" onclick="switchPage('deposit')">🪙 充币记录</div>
+  <div class="nav-tab" onclick="switchPage('handover')">📋 Handover Cases</div>
+  <div class="nav-tab" onclick="switchPage('frozen')">🔒 冻结名单</div>
+</nav>
+
+<!-- PAGE: 订单数据 -->
+<div id="page-orders" class="page active">
+  <div class="sec-header">
+    <div class="sec-title">订单量数据分析</div>
+    <div class="btn-group">
+      <label class="btn" style="cursor:pointer">↑ 导入 Excel<input type="file" accept=".xlsx" onchange="alert('导入功能：请确认格式与模板一致。当前已预载真实数据。')"></label>
+      <select id="month-select" onchange="updateOrderPage()" style="max-width:130px">
+        <option value="8">2026年5月</option>
+        <option value="7">2026年4月</option>
+        <option value="6">2026年3月</option>
+        <option value="5">2026年2月</option>
+        <option value="4">2026年1月</option>
+        <option value="3">2025年12月</option>
+        <option value="2">2025年11月</option>
+        <option value="1">2025年10月</option>
+        <option value="0">2025年9月</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">全渠道总笔数</div><div class="metric-val" id="om-tc">—</div><div class="metric-sub" id="om-tc-chg"></div></div>
+    <div class="metric"><div class="metric-label">全渠道总金额(CNY)</div><div class="metric-val" id="om-ta">—</div><div class="metric-sub" id="om-ta-chg"></div></div>
+    <div class="metric"><div class="metric-label">P4B 兑入笔数</div><div class="metric-val" id="om-pc">—</div><div class="metric-sub" id="om-pc-pct" style="color:var(--accent)"></div></div>
+    <div class="metric"><div class="metric-label">P4B 兑入金额(CNY)</div><div class="metric-val" id="om-pa">—</div><div class="metric-sub" id="om-pa-pct" style="color:var(--accent)"></div></div>
+    <div class="metric"><div class="metric-label">P4B月均金额</div><div class="metric-val" id="om-avg">—</div><div class="metric-sub">历史平均</div></div>
+  </div>
+
+  <!-- 渠道占比 -->
+  <div class="grid2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">兑入渠道占比（笔数）— P4B 在所有商户中的份额</div>
+      <div style="display:flex;gap:20px;align-items:flex-start">
+        <div class="chart-wrap" style="height:210px;width:210px;flex-shrink:0"><canvas id="pie-ch-c"></canvas></div>
+        <div class="pie-legend" id="leg-ch-c" style="flex:1;margin-top:4px"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">兑入渠道占比（金额）— P4B 在所有商户中的份额</div>
+      <div style="display:flex;gap:20px;align-items:flex-start">
+        <div class="chart-wrap" style="height:210px;width:210px;flex-shrink:0"><canvas id="pie-ch-a"></canvas></div>
+        <div class="pie-legend" id="leg-ch-a" style="flex:1;margin-top:4px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- P4B 承兑商团队 -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">P4B 承兑商团队接单占比（本月内部分配）</div>
+    <div class="grid2">
+      <div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em">按笔数</div>
+        <div id="team-bars-c"></div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em">按金额 (CNY)</div>
+        <div id="team-bars-a"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 趋势图 -->
+  <div class="grid2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">各渠道兑入笔数月度趋势</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="trend-c"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">各渠道兑入金额月度趋势 (CNY)</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="trend-a"></canvas></div>
+    </div>
+  </div>
+
+  <!-- 明细表 -->
+  <div class="card">
+    <div class="card-title">月度明细汇总</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>月份</th><th>DP 笔数</th><th>CG 笔数</th><th>RKX 笔数</th><th>6i 笔数</th><th>P4B 笔数</th><th>P4B 占总%</th><th>总笔数</th><th>P4B 金额(CNY)</th><th>P4B 环比</th></tr></thead>
+        <tbody id="o-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: 充币记录 -->
+<div id="page-deposit" class="page">
+  <div class="sec-header">
+    <div class="sec-title">充币记录 & 手续费计算</div>
+    <div class="btn-group">
+      <label class="btn" style="cursor:pointer">↑ 导入充币 Excel<input type="file" accept=".xlsx" onchange="loadDepositExcel(this)"></label>
+      <button class="btn btn-primary" onclick="openModal('dep-modal')">+ 新增记录</button>
+      <button class="btn" onclick="exportDeposit()">↓ 导出 CSV</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">手续费计算器</div>
+    <div class="form-row" style="align-items:flex-end">
+      <div class="form-group" style="max-width:170px"><label>团队类型</label>
+        <select id="fee-team" onchange="calcFee()"><option value="0.8">核心团队（折扣 80%）</option><option value="1.0">普通团队（折扣 100%）</option></select>
+      </div>
+      <div class="form-group" style="max-width:140px"><label>P4B 兑出汇率</label><input type="number" id="fee-p4b" value="7.03" step="0.0001" oninput="calcFee()"></div>
+      <div class="form-group" style="max-width:140px"><label>OKX 买币汇率</label><input type="number" id="fee-okx" value="6.83" step="0.0001" oninput="calcFee()"></div>
+      <div class="form-group" style="max-width:160px"><label>充币金额 (USDT)</label><input type="number" id="fee-amount" value="10000" oninput="calcFee()"></div>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="result-grid">
+          <div class="result-item"><div class="r-label">手续费率</div><div class="r-val" id="fr-rate">—</div></div>
+          <div class="result-item"><div class="r-label">扣费后汇率</div><div class="r-val" id="fr-eff">—</div></div>
+          <div class="result-item"><div class="r-label">实际到账 (USDT)</div><div class="r-val" id="fr-recv">—</div></div>
+          <div class="result-item"><div class="r-label">手续费扣除</div><div class="r-val" id="fr-fee-amt">—</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="formula-box">差值 = (P4B兑出 − OKX买币) × 折扣<br>手续费% = 差值 ÷ P4B兑出 × 100<br>实际汇率 = P4B兑出 × (1 − 手续费%)<br><span style="color:var(--text3)">例：(7.03−6.83)×0.8=0.16 → 0.16÷7.03×100=2.28%</span></div>
+      </div>
+    </div>
+    <div class="notice-box" id="fee-notice">—</div>
+  </div>
+
+  <div class="card">
+    <div class="metrics" style="margin-bottom:14px">
+      <div class="metric"><div class="metric-label">总笔数</div><div class="metric-val" id="dm-count">0</div></div>
+      <div class="metric"><div class="metric-label">总入金(USDT)</div><div class="metric-val" id="dm-in">0</div></div>
+      <div class="metric"><div class="metric-label">总到账(USDT)</div><div class="metric-val" id="dm-recv">0</div></div>
+      <div class="metric"><div class="metric-label">平均手续费</div><div class="metric-val" id="dm-fee">—</div></div>
+    </div>
+    <div class="search-row">
+      <input type="text" id="dep-search" placeholder="搜索订单号 / 账户ID..." oninput="renderDeposit()">
+      <select id="dep-type" onchange="renderDeposit()"><option value="">全部类型</option><option>TRC20</option><option>ERC20</option></select>
+      <select id="dep-pic" onchange="renderDeposit()"><option value="">全部审批人</option><option>Ivan</option><option>Yuan</option><option>Joseph</option></select>
+    </div>
+    <div class="tbl-scroll tbl-wrap">
+      <table><thead><tr><th>日期</th><th>时间</th><th>账户ID</th><th>订单号</th><th>类型</th><th>入金(U)</th><th>到账(U)</th><th>手续费</th><th>审批人</th><th>哈希值</th><th>备注</th><th></th></tr></thead>
+      <tbody id="dep-body"></tbody></table>
+    </div>
+    <div id="dep-empty" class="empty"><div class="empty-icon">🪙</div><div>请导入充币 Excel 或手动添加记录</div></div>
+  </div>
+</div>
+
+<!-- PAGE: Handover Cases -->
+<div id="page-handover" class="page">
+  <div class="sec-header">
+    <div class="sec-title">Handover Cases</div>
+    <div class="btn-group">
+      <label class="btn" style="cursor:pointer">↑ 导入 Excel<input type="file" accept=".xlsx" onchange="loadHCExcel(this)"></label>
+      <button class="btn btn-primary" onclick="openModal('hc-modal')">+ 新增 Case</button>
+      <button class="btn" onclick="exportHC()">↓ 导出 CSV</button>
+    </div>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">总 Cases</div><div class="metric-val" id="hm-total">0</div></div>
+    <div class="metric"><div class="metric-label">已完成</div><div class="metric-val up" id="hm-done">0</div><div class="metric-sub" id="hm-rate"></div></div>
+    <div class="metric"><div class="metric-label">进行中</div><div class="metric-val" id="hm-prog">0</div></div>
+    <div class="metric"><div class="metric-label">等待中</div><div class="metric-val" id="hm-wait">0</div></div>
+    <div class="metric"><div class="metric-label">搁置</div><div class="metric-val down" id="hm-shelved">0</div></div>
+  </div>
+  <div class="chips" id="hc-chips">
+    <div class="chip active" onclick="filterHC('',this)">全部</div>
+    <div class="chip" onclick="filterHC('已完成',this)">✓ 已完成</div>
+    <div class="chip" onclick="filterHC('进行中',this)">↻ 进行中</div>
+    <div class="chip" onclick="filterHC('等待',this)">⏳ 等待中</div>
+    <div class="chip" onclick="filterHC('搁置',this)">⏸ 搁置</div>
+    <div class="chip" onclick="filterHC('__high',this)">🔴 高优先级</div>
+  </div>
+  <div class="search-row"><input type="text" id="hc-search" placeholder="搜索订单号 / 事项..." oninput="renderHC()"></div>
+  <div class="card">
+    <div class="tbl-scroll tbl-wrap">
+      <table><thead><tr><th>日期</th><th>Case 事项</th><th>订单号</th><th>当前进度</th><th>下一步/备注</th><th>优先</th><th>状态</th><th>邮箱</th><th>操作</th></tr></thead>
+      <tbody id="hc-body"></tbody></table>
+    </div>
+    <div id="hc-empty" class="empty"><div class="empty-icon">📋</div><div>请导入 Handover Cases Excel 或手动添加</div></div>
+  </div>
+</div>
+
+<!-- PAGE: 冻结名单 -->
+<div id="page-frozen" class="page">
+  <div class="sec-header">
+    <div class="sec-title">冻结 / 风控处理记录</div>
+    <div class="btn-group">
+      <label class="btn" style="cursor:pointer">↑ 导入 Excel<input type="file" accept=".xlsx" onchange="loadFRExcel(this)"></label>
+      <button class="btn btn-primary" onclick="openModal('fr-modal')">+ 新增记录</button>
+      <button class="btn" onclick="exportFR()">↓ 导出 CSV</button>
+    </div>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">总案件</div><div class="metric-val" id="fm-total">0</div></div>
+    <div class="metric"><div class="metric-label">司法冻结</div><div class="metric-val down" id="fm-jud">0</div></div>
+    <div class="metric"><div class="metric-label">账号冻结</div><div class="metric-val" id="fm-acc">0</div></div>
+    <div class="metric"><div class="metric-label">客户投诉</div><div class="metric-val" id="fm-cpl">0</div></div>
+    <div class="metric"><div class="metric-label">总申请补币(U)</div><div class="metric-val" id="fm-coins">0</div></div>
+    <div class="metric"><div class="metric-label">总涉及金额(CNY)</div><div class="metric-val" id="fm-amt">0</div></div>
+  </div>
+  <div class="chips" id="fr-chips">
+    <div class="chip active" onclick="filterFR('',this)">全部</div>
+    <div class="chip" onclick="filterFR('司法',this)">司法冻结</div>
+    <div class="chip" onclick="filterFR('账号',this)">账号冻结</div>
+    <div class="chip" onclick="filterFR('客户',this)">客诉</div>
+    <div class="chip" onclick="filterFR('风控',this)">风控</div>
+    <div class="chip" onclick="filterFR('可疑',this)">可疑款项</div>
+  </div>
+  <div class="search-row">
+    <input type="text" id="fr-search" placeholder="搜索交易员账号 / 订单号 / 付款人..." oninput="renderFR()">
+    <select id="fr-coins" onchange="renderFR()"><option value="">全部补币状态</option><option value="是">已申请补币</option><option value="否">未申请</option></select>
+  </div>
+  <div class="card">
+    <div class="tbl-scroll tbl-wrap">
+      <table><thead><tr><th>交易员账号</th><th>反馈日期</th><th>P4B订单号</th><th>DP/CG订单号</th><th>金额(CNY)</th><th>付款人</th><th>类型</th><th>补币</th><th>申请补币(U)</th><th>事件简述</th><th></th></tr></thead>
+      <tbody id="fr-body"></tbody></table>
+    </div>
+    <div id="fr-empty" class="empty"><div class="empty-icon">🔒</div><div>请导入冻结记录 Excel 或手动添加</div></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="dep-modal">
+  <div class="modal">
+    <div class="modal-title">新增充币记录 <span class="modal-close" onclick="closeModal('dep-modal')">✕</span></div>
+    <div class="form-row"><div class="form-group"><label>日期</label><input type="date" id="dm-date"></div><div class="form-group"><label>时间</label><input type="time" id="dm-time"></div></div>
+    <div class="form-row"><div class="form-group"><label>账户ID</label><input type="text" id="dm-id"></div><div class="form-group"><label>类型</label><select id="dm-type"><option>TRC20</option><option>ERC20</option></select></div></div>
+    <div class="form-group" style="margin-bottom:12px"><label>订单号</label><input type="text" id="dm-order"></div>
+    <div class="form-row"><div class="form-group"><label>入金金额 (USDT)</label><input type="number" id="dm-in" step="0.01" oninput="autoRecv()"></div><div class="form-group"><label>手续费率(小数)</label><input type="number" id="dm-fr" step="0.0001" value="0.0331" oninput="autoRecv()"></div></div>
+    <div class="form-row"><div class="form-group"><label>到账数量 (USDT)</label><input type="number" id="dm-recv" step="0.01"></div><div class="form-group"><label>审批人</label><select id="dm-pic"><option>Ivan</option><option>Yuan</option><option>Joseph</option></select></div></div>
+    <div class="form-group" style="margin-bottom:12px"><label>钱包地址</label><input type="text" id="dm-wallet"></div>
+    <div class="form-group" style="margin-bottom:12px"><label>哈希值</label><input type="text" id="dm-hash"></div>
+    <div class="form-group" style="margin-bottom:20px"><label>备注</label><textarea id="dm-remark"></textarea></div>
+    <div class="btn-group" style="justify-content:flex-end"><button class="btn" onclick="closeModal('dep-modal')">取消</button><button class="btn btn-primary" onclick="saveDeposit()">保存</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="hc-modal">
+  <div class="modal">
+    <div class="modal-title">新增 Handover Case <span class="modal-close" onclick="closeModal('hc-modal')">✕</span></div>
+    <div class="form-row"><div class="form-group"><label>日期</label><input type="date" id="hm-date"></div><div class="form-group"><label>优先级</label><select id="hm-pri"><option>低</option><option>中</option><option>高</option></select></div></div>
+    <div class="form-group" style="margin-bottom:12px"><label>Case 事项</label><textarea id="hm-type" rows="2"></textarea></div>
+    <div class="form-group" style="margin-bottom:12px"><label>订单号</label><input type="text" id="hm-order"></div>
+    <div class="form-group" style="margin-bottom:12px"><label>当前进度</label><textarea id="hm-prog" rows="2"></textarea></div>
+    <div class="form-group" style="margin-bottom:12px"><label>下一步 / 备注</label><textarea id="hm-next" rows="2"></textarea></div>
+    <div class="form-row"><div class="form-group"><label>状态</label><select id="hm-status"><option>等待中</option><option>进行中</option><option>已完成</option><option>搁置（超过一个月客户/销售没回复）</option></select></div><div class="form-group"><label>邮箱</label><input type="text" id="hm-email"></div></div>
+    <div class="form-group" style="margin-bottom:20px"><label>额外备注</label><textarea id="hm-extra"></textarea></div>
+    <div class="btn-group" style="justify-content:flex-end"><button class="btn" onclick="closeModal('hc-modal')">取消</button><button class="btn btn-primary" onclick="saveHC()">保存</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="fr-modal">
+  <div class="modal">
+    <div class="modal-title">新增冻结记录 <span class="modal-close" onclick="closeModal('fr-modal')">✕</span></div>
+    <div class="form-row"><div class="form-group"><label>交易员账号</label><input type="text" id="fm-trader"></div><div class="form-group"><label>反馈日期</label><input type="date" id="fm-date"></div></div>
+    <div class="form-row"><div class="form-group"><label>P4B 订单号</label><input type="text" id="fm-p4b"></div><div class="form-group"><label>DP/CG 订单号</label><input type="text" id="fm-dp"></div></div>
+    <div class="form-row"><div class="form-group"><label>订单金额 (CNY)</label><input type="number" id="fm-ai"></div><div class="form-group"><label>类型</label><select id="fm-type"><option>司法冻结</option><option>账号冻结</option><option>客户举报/客诉</option><option>风控</option><option>可疑/诈骗款项</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label>付款人（中文）</label><input type="text" id="fm-cn"></div><div class="form-group"><label>付款人ID</label><input type="text" id="fm-pid"></div></div>
+    <div class="form-row"><div class="form-group"><label>付款人销售</label><input type="text" id="fm-sales"></div><div class="form-group"><label>付款人代理</label><input type="text" id="fm-agent"></div></div>
+    <div class="form-row"><div class="form-group"><label>是否补币</label><select id="fm-coins-s"><option value="">未确定</option><option value="是">是</option><option value="否">否</option></select></div><div class="form-group"><label>申请补币 (U)</label><input type="number" id="fm-ca" step="0.01"></div></div>
+    <div class="form-group" style="margin-bottom:20px"><label>事件简述</label><textarea id="fm-desc" rows="3"></textarea></div>
+    <div class="btn-group" style="justify-content:flex-end"><button class="btn" onclick="closeModal('fr-modal')">取消</button><button class="btn btn-primary" onclick="saveFR()">保存</button></div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────
+const MLABELS=['2025-09','2025-10','2025-11','2025-12','2026-01','2026-02','2026-03','2026-04','2026-05'];
+const CD=[
+  {DP:{c:2785,a:20852714},CG:{c:128,a:3035352},RKX:null,i6:null,P4B:{c:970,a:10275398}},
+  {DP:{c:2486,a:19514279},CG:{c:98,a:1366936},RKX:null,i6:null,P4B:{c:932,a:10451299}},
+  {DP:{c:2735,a:23786098},CG:{c:50,a:1147559},RKX:null,i6:null,P4B:{c:743,a:13679930}},
+  {DP:{c:2166,a:16095119},CG:{c:50,a:688509},RKX:null,i6:null,P4B:{c:521,a:10287876}},
+  {DP:{c:2727,a:24272965},CG:{c:99,a:3088229},RKX:null,i6:null,P4B:{c:828,a:15951598}},
+  {DP:{c:6167,a:41936581},CG:{c:197,a:6227290},RKX:null,i6:null,P4B:{c:1340,a:26469030}},
+  {DP:{c:2868,a:18964292},CG:{c:56,a:1056513},RKX:null,i6:null,P4B:{c:502,a:11525655}},
+  {DP:{c:3544,a:25200812},CG:{c:135,a:2835861},RKX:{c:53,a:743988},i6:{c:16,a:296640},P4B:{c:885,a:17475208}},
+  {DP:{c:3419,a:26445098},CG:{c:142,a:4080688},RKX:{c:139,a:1109720},i6:{c:18,a:97559},P4B:{c:998,a:20506820}},
+];
+const TEAMS={
+  3:{DP:{c:2868,a:18964292},teams:[
+    {n:'Doo Prime',c:448,a:10386303},{n:'J-冯总',c:335,a:9069082},{n:'星火-2队',c:43,a:954418},
+    {n:'CG Trade',c:21,a:664916},{n:'Doo Prime-XJ',c:24,a:359851},{n:'J-新疆-冯总',c:16,a:265365},
+    {n:'FJJ',c:7,a:421163},{n:'J-景总(小额)',c:61,a:260656},{n:'其他',c:47,a:743901}]},
+  7:{DP:{c:3544,a:25200812},teams:[
+    {n:'Doo Prime',c:708,a:13732602},{n:'J-冯总',c:339,a:11832239},{n:'CG Trade',c:85,a:2215104},
+    {n:'J-冯总(小额)',c:217,a:915322},{n:'星火-2队',c:48,a:821016},{n:'RKX',c:43,a:607309},
+    {n:'Doo Prime-XJ',c:32,a:667854},{n:'J-新疆-冯总',c:20,a:691090},{n:'J-景总',c:13,a:733734},
+    {n:'FJJ',c:7,a:782985},{n:'其他',c:73,a:1954153}]},
+  8:{DP:{c:3419,a:26445098},teams:[
+    {n:'Doo Prime',c:816,a:15549360},{n:'J-冯总',c:422,a:14507855},{n:'J-冯总(小额)',c:357,a:1569249},
+    {n:'CG Trade',c:78,a:3517873},{n:'J-新疆-冯总',c:43,a:864678},{n:'Doo Prime-XJ',c:43,a:792249},
+    {n:'星火-2队',c:27,a:688860},{n:'RKX',c:28,a:347068},{n:'J-景总',c:11,a:758060},
+    {n:'FJJ',c:8,a:1163137},{n:'其他',c:65,a:748431}]},
+};
+const COLORS=['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#0891b2','#be185d','#65a30d','#ea580c','#6366f1','#a3a3a3'];
+
+// ── STATE ─────────────────────────────────────────────────────
+let deposits=[],handovers=[],frozen=[],hcFilter='',frFilter='';
+
+// ── NAV ───────────────────────────────────────────────────────
+function switchPage(id){
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',['orders','deposit','handover','frozen'][i]===id));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(id==='orders') setTimeout(updateOrderPage,80);
+}
+
+// ── MODAL ─────────────────────────────────────────────────────
+function openModal(id){document.getElementById(id).classList.add('open');const di=id==='dep-modal'?'dm-date':id==='hc-modal'?'hm-date':'fm-date';document.getElementById(di)&&(document.getElementById(di).value=tod());}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+function tod(){return new Date().toISOString().slice(0,10);}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function fmt(n){if(!n)return '0';return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(0)+'K':Math.round(n).toString();}
+function fmtN(n){return(n||0).toLocaleString();}
+function pct(a,b){if(!b||!a)return '';const v=(a-b)/b*100;return(v>=0?'↑ ':'↓ ')+Math.abs(v).toFixed(1)+'%';}
+function pcls(a,b){return a>=b?'up':'down';}
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+
+// ── ORDER PAGE ────────────────────────────────────────────────
+function updateOrderPage(){
+  const idx=parseInt(document.getElementById('month-select').value);
+  const d=CD[idx], dp=idx>0?CD[idx-1]:null;
+  const tc=(d.DP?.c||0)+(d.CG?.c||0)+(d.RKX?.c||0)+(d.i6?.c||0)+(d.P4B?.c||0);
+  const ta=(d.DP?.a||0)+(d.CG?.a||0)+(d.RKX?.a||0)+(d.i6?.a||0)+(d.P4B?.a||0);
+  const ptc=dp?(dp.DP?.c||0)+(dp.CG?.c||0)+(dp.RKX?.c||0)+(dp.i6?.c||0)+(dp.P4B?.c||0):0;
+  const pta=dp?(dp.DP?.a||0)+(dp.CG?.a||0)+(dp.RKX?.a||0)+(dp.i6?.a||0)+(dp.P4B?.a||0):0;
+
+  set('om-tc',fmtN(tc));
+  set('om-ta',fmt(ta));
+  const cTc=document.getElementById('om-tc-chg');
+  if(dp&&cTc){cTc.textContent=pct(tc,ptc)+' vs 上月';cTc.className='metric-sub '+pcls(tc,ptc);}
+  const cTa=document.getElementById('om-ta-chg');
+  if(dp&&cTa){cTa.textContent=pct(ta,pta)+' vs 上月';cTa.className='metric-sub '+pcls(ta,pta);}
+
+  set('om-pc',fmtN(d.P4B?.c||0));
+  set('om-pc-pct','占全渠道笔数 '+(tc?(d.P4B?.c||0)/tc*100:0).toFixed(1)+'%');
+  set('om-pa',fmt(d.P4B?.a||0));
+  set('om-pa-pct','占全渠道金额 '+(ta?(d.P4B?.a||0)/ta*100:0).toFixed(1)+'%');
+
+  const avgs=CD.filter(x=>x.P4B).map(x=>x.P4B.a);
+  set('om-avg',fmt(avgs.reduce((a,b)=>a+b,0)/avgs.length));
+
+  // Channel pies
+  const chLabels=['Doo Prime (DP)','CG Trade','RKX','6i','Pay4Broker (P4B)'];
+  const chCounts=[d.DP?.c||0,d.CG?.c||0,d.RKX?.c||0,d.i6?.c||0,d.P4B?.c||0];
+  const chAmts=[d.DP?.a||0,d.CG?.a||0,d.RKX?.a||0,d.i6?.a||0,d.P4B?.a||0];
+  drawPie('pie-ch-c','_pcc',chLabels,chCounts,tc,'leg-ch-c');
+  drawPie('pie-ch-a','_pca',chLabels,chAmts,ta,'leg-ch-a');
+
+  // Team bars – find nearest available
+  const teamKey=[6,5,4,3,2,1,0,7,8][idx]!==undefined?idx:8;
+  const td=TEAMS[idx]||TEAMS[7]||TEAMS[8];
+  const tms=td.teams;
+  const ttC=tms.reduce((a,t)=>a+t.c,0);
+  const ttA=tms.reduce((a,t)=>a+t.a,0);
+  document.getElementById('team-bars-c').innerHTML=tms.slice(0,9).map((t,i)=>`
+    <div class="bar-row">
+      <div class="bar-label" title="${t.n}">${t.n}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(t.c/ttC*100).toFixed(1)}%;background:${COLORS[i]}"></div></div>
+      <div class="bar-val">${(t.c/ttC*100).toFixed(1)}%</div>
+    </div>`).join('');
+  document.getElementById('team-bars-a').innerHTML=tms.slice(0,9).map((t,i)=>`
+    <div class="bar-row">
+      <div class="bar-label" title="${t.n}">${t.n}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(t.a/ttA*100).toFixed(1)}%;background:${COLORS[i]}"></div></div>
+      <div class="bar-val">${(t.a/ttA*100).toFixed(1)}%</div>
+    </div>`).join('');
+
+  renderTrends();
+  renderOrderTable();
+}
+
+function drawPie(cid,sk,labels,data,total,legId){
+  if(window[sk])window[sk].destroy();
+  const nz=data.map((v,i)=>({v,l:labels[i],c:COLORS[i]})).filter(x=>x.v>0);
+  window[sk]=new Chart(document.getElementById(cid),{
+    type:'doughnut',
+    data:{labels:nz.map(x=>x.l),datasets:[{data:nz.map(x=>x.v),backgroundColor:nz.map(x=>x.c),borderWidth:2,borderColor:'#fff',hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed.toLocaleString()} (${total?(ctx.parsed/total*100).toFixed(1):0}%)`}}}}
+  });
+  document.getElementById(legId).innerHTML=nz.map(x=>`
+    <div class="pie-legend-item">
+      <div class="pie-dot" style="background:${x.c}"></div>
+      <span class="pie-legend-label">${x.l}</span>
+      <span class="pie-legend-val">${total?(x.v/total*100).toFixed(1):0}%</span>
+    </div>`).join('');
+}
+
+function renderTrends(){
+  const labels=MLABELS;
+  const chs=[{k:'DP',l:'Doo Prime',c:'#2563eb'},{k:'CG',l:'CG Trade',c:'#059669'},{k:'RKX',l:'RKX',c:'#d97706'},{k:'i6',l:'6i',c:'#dc2626'},{k:'P4B',l:'Pay4Broker',c:'#7c3aed'}];
+  const opts={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10,padding:10}}},scales:{x:{ticks:{color:'#9ba3b8',font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},y:{ticks:{color:'#9ba3b8',font:{size:10},callback:v=>fmt(v)},grid:{color:'rgba(0,0,0,.05)'}}}};
+  const ds=field=>chs.map(ch=>({label:ch.l,data:CD.map(d=>(d[ch.k])?.[field]||0),borderColor:ch.c,backgroundColor:ch.c+'18',tension:.35,fill:false,pointRadius:3,pointBackgroundColor:ch.c,borderWidth:2}));
+  if(window._tC)window._tC.destroy();
+  window._tC=new Chart(document.getElementById('trend-c'),{type:'line',data:{labels,datasets:ds('c')},options:JSON.parse(JSON.stringify(opts))});
+  if(window._tA)window._tA.destroy();
+  window._tA=new Chart(document.getElementById('trend-a'),{type:'line',data:{labels,datasets:ds('a')},options:JSON.parse(JSON.stringify(opts))});
+}
+
+function renderOrderTable(){
+  document.getElementById('o-tbody').innerHTML=CD.map((d,i)=>{
+    const tc=(d.DP?.c||0)+(d.CG?.c||0)+(d.RKX?.c||0)+(d.i6?.c||0)+(d.P4B?.c||0);
+    const p=i>0?CD[i-1]:null;
+    const chg=p&&d.P4B&&p.P4B?pct(d.P4B.a,p.P4B.a):'';
+    const cc=p&&d.P4B&&p.P4B?(d.P4B.a>=p.P4B.a?'color:var(--green)':'color:var(--red)'):'';
+    return `<tr>
+      <td style="font-weight:600">${MLABELS[i]}</td>
+      <td>${fmtN(d.DP?.c||0)}</td><td>${fmtN(d.CG?.c||0)}</td>
+      <td>${d.RKX?fmtN(d.RKX.c):'—'}</td><td>${d.i6?fmtN(d.i6.c):'—'}</td>
+      <td style="font-weight:600;color:var(--accent)">${fmtN(d.P4B?.c||0)}</td>
+      <td><span class="badge b-blue">${tc?(d.P4B?.c||0)/tc*100:0}%</span></td>
+      <td>${fmtN(tc)}</td>
+      <td style="font-family:var(--mono)">${fmtN(d.P4B?.a||0)}</td>
+      <td style="${cc};font-family:var(--mono)">${chg}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── FEE CALC ──────────────────────────────────────────────────
+function calcFee(){
+  const disc=parseFloat(document.getElementById('fee-team').value)||1;
+  const p4b=parseFloat(document.getElementById('fee-p4b').value)||0;
+  const okx=parseFloat(document.getElementById('fee-okx').value)||0;
+  const amt=parseFloat(document.getElementById('fee-amount').value)||0;
+  if(p4b<=okx||p4b<=0){
+    set('fr-rate','0%');set('fr-eff',p4b.toFixed(4));set('fr-recv',amt.toLocaleString()+' U');set('fr-fee-amt','0 U');
+    document.getElementById('fee-notice').innerHTML='<strong>无需收取手续费</strong>，当前兑入汇率优于或等于买币汇率。';return;
+  }
+  const diff=(p4b-okx)*disc;
+  const rate=diff/p4b;
+  const eff=p4b*(1-rate);
+  const recv=amt*(1-rate);
+  set('fr-rate',(rate*100).toFixed(4)+'%');
+  set('fr-eff',eff.toFixed(5));
+  set('fr-recv',recv.toLocaleString(undefined,{maximumFractionDigits:2})+' USDT');
+  set('fr-fee-amt',(amt*rate).toLocaleString(undefined,{maximumFractionDigits:2})+' USDT');
+  document.getElementById('fee-notice').innerHTML=`您好，充币渠道已开启，目前充币将收取 <strong>${(rate*100).toFixed(2)}%</strong> 手续费以补汇率差（例：${p4b.toFixed(2)} × ${(1-rate).toFixed(5)} = ${eff.toFixed(5)}）${amt?`；${amt.toLocaleString()} USDT → 实际到账约 <strong>${recv.toFixed(2)} USDT</strong>`:''}`;
+}
+calcFee();
+
+// ── DEPOSIT ───────────────────────────────────────────────────
+function autoRecv(){
+  const a=parseFloat(document.getElementById('dm-in').value)||0;
+  const f=parseFloat(document.getElementById('dm-fr').value)||0;
+  document.getElementById('dm-recv').value=(a*(1-f)).toFixed(2);
+}
+function loadDepositExcel(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,raw:false});
+      let hr=-1;for(let i=0;i<data.length;i++){if(data[i]&&String(data[i][0]).includes('日期')){hr=i;break;}}
+      deposits=data.slice(hr<0?1:hr+1).filter(r=>r[3]).map(r=>({
+        date:r[0]?String(r[0]).slice(0,10):'',time:r[1]||'',accountId:r[2]||'',orderId:r[3]||'',
+        wallet:r[4]||'',type:r[5]||'TRC20',
+        inAmt:parseFloat(String(r[6]).replace(/[^0-9.]/g,''))||0,
+        hash:r[7]||'',recvAmt:parseFloat(r[8])||0,pic:r[9]||'',remark:r[10]||'',feeRate:parseFloat(r[11])||0,
+      }));
+      renderDeposit();alert(`✅ 成功导入 ${deposits.length} 条充币记录`);
+    }catch(err){alert('解析失败：'+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+function renderDeposit(){
+  const s=document.getElementById('dep-search').value.toLowerCase();
+  const t=document.getElementById('dep-type').value;
+  const p=document.getElementById('dep-pic').value;
+  const data=deposits.filter(d=>{
+    if(s&&!d.orderId.toLowerCase().includes(s)&&!d.accountId.toLowerCase().includes(s))return false;
+    if(t&&d.type!==t)return false;if(p&&d.pic!==p)return false;return true;
+  });
+  document.getElementById('dep-empty').style.display=data.length?'none':'block';
+  document.getElementById('dep-body').innerHTML=data.map(d=>`<tr>
+    <td style="font-family:var(--mono);font-size:12px;white-space:nowrap">${d.date}</td>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${d.time}</td>
+    <td style="font-family:var(--mono);font-size:12px">${d.accountId}</td>
+    <td style="font-size:11px;font-family:var(--mono);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.orderId}</td>
+    <td><span class="badge ${d.type==='TRC20'?'b-blue':'b-green'}">${d.type}</span></td>
+    <td style="font-family:var(--mono)">${fmtN(d.inAmt)}</td>
+    <td style="font-family:var(--mono)">${fmtN(d.recvAmt)}</td>
+    <td><span class="badge b-gray">${d.feeRate?(d.feeRate*100).toFixed(2)+'%':'—'}</span></td>
+    <td>${d.pic}</td>
+    <td><span class="hash" title="${d.hash}" onclick="navigator.clipboard&&navigator.clipboard.writeText('${d.hash}').then(()=>alert('已复制哈希值'))">${d.hash?d.hash.slice(0,14)+'…':''}</span></td>
+    <td style="font-size:12px;color:var(--text2);max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.remark||''}</td>
+    <td><button class="btn btn-sm btn-danger" onclick="deposits.splice(${deposits.indexOf(d)},1);renderDeposit()">删</button></td>
+  </tr>`).join('');
+  const tIn=data.reduce((a,d)=>a+d.inAmt,0);
+  const tRv=data.reduce((a,d)=>a+d.recvAmt,0);
+  set('dm-count',data.length.toLocaleString());
+  set('dm-in',tIn.toLocaleString(undefined,{maximumFractionDigits:0}));
+  set('dm-recv',tRv.toLocaleString(undefined,{maximumFractionDigits:0}));
+  const fs=data.filter(d=>d.feeRate);
+  set('dm-fee',fs.length?(fs.reduce((a,d)=>a+d.feeRate,0)/fs.length*100).toFixed(2)+'%':'—');
+}
+function saveDeposit(){
+  deposits.unshift({date:document.getElementById('dm-date').value,time:document.getElementById('dm-time').value,accountId:document.getElementById('dm-id').value,orderId:document.getElementById('dm-order').value,type:document.getElementById('dm-type').value,inAmt:parseFloat(document.getElementById('dm-in').value)||0,recvAmt:parseFloat(document.getElementById('dm-recv').value)||0,feeRate:parseFloat(document.getElementById('dm-fr').value)||0,pic:document.getElementById('dm-pic').value,wallet:document.getElementById('dm-wallet').value,hash:document.getElementById('dm-hash').value,remark:document.getElementById('dm-remark').value});
+  renderDeposit();closeModal('dep-modal');
+}
+function exportDeposit(){dlCSV([['日期','时间','账户ID','订单号','类型','入金USDT','到账USDT','手续费率','审批人','哈希','备注'],...deposits.map(d=>[d.date,d.time,d.accountId,d.orderId,d.type,d.inAmt,d.recvAmt,d.feeRate,d.pic,d.hash,d.remark])],'充币记录.csv');}
+
+// ── HANDOVER ──────────────────────────────────────────────────
+function loadHCExcel(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,raw:false});
+      let hr=-1;for(let i=0;i<data.length;i++){if(data[i]&&String(data[i][0]).includes('日期')){hr=i;break;}}
+      handovers=data.slice(hr<0?1:hr+1).filter(r=>r[0]||r[2]).map(r=>({
+        date:r[0]?String(r[0]).slice(0,10):'',type:r[1]||'',orderId:r[2]||'',
+        progress:r[3]||'',next:r[4]||'',priority:r[5]||'低',status:r[6]||'',extra:r[7]||'',email:r[8]||'',
+      }));
+      renderHC();updateHCM();alert(`✅ 成功导入 ${handovers.length} 条 Handover Cases`);
+    }catch(err){alert('解析失败：'+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+function renderHC(){
+  const s=document.getElementById('hc-search').value.toLowerCase();
+  const data=handovers.filter(h=>{
+    if(hcFilter==='__high')return h.priority==='高';
+    if(hcFilter&&!h.status.includes(hcFilter))return false;
+    if(s&&!h.orderId.toLowerCase().includes(s)&&!h.type.toLowerCase().includes(s))return false;
+    return true;
+  });
+  document.getElementById('hc-empty').style.display=data.length?'none':'block';
+  document.getElementById('hc-body').innerHTML=data.map(h=>`<tr>
+    <td style="font-family:var(--mono);font-size:12px;white-space:nowrap">${h.date}</td>
+    <td style="max-width:220px;font-size:12px">${h.type}</td>
+    <td style="font-size:11px;font-family:var(--mono);max-width:160px;word-break:break-all">${h.orderId}</td>
+    <td style="max-width:180px;font-size:12px;color:var(--text2)">${h.progress}</td>
+    <td style="max-width:160px;font-size:12px;color:var(--text2)">${h.next}</td>
+    <td>${priBadge(h.priority)}</td>
+    <td>${statusBadge(h.status)}</td>
+    <td style="font-size:11px;color:var(--text3);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.email||''}</td>
+    <td style="white-space:nowrap">
+      <select class="btn btn-sm" style="padding:3px 6px;font-size:11px;width:auto" onchange="handovers[${handovers.indexOf(h)}].status=this.value;renderHC();updateHCM()">
+        <option ${h.status.includes('等待')?'selected':''}>等待中</option>
+        <option ${h.status.includes('进行')?'selected':''}>进行中</option>
+        <option ${h.status.includes('完成')?'selected':''}>已完成</option>
+        <option ${h.status.includes('搁置')?'selected':''}>搁置（超过一个月客户/销售没回复）</option>
+      </select>
+    </td>
+  </tr>`).join('');
+}
+function filterHC(f,el){hcFilter=f;document.querySelectorAll('#hc-chips .chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderHC();}
+function updateHCM(){
+  const done=handovers.filter(h=>h.status.includes('完成')).length;
+  set('hm-total',handovers.length);set('hm-done',done);
+  set('hm-rate',handovers.length?'完成率 '+Math.round(done/handovers.length*100)+'%':'');
+  set('hm-prog',handovers.filter(h=>h.status.includes('进行')).length);
+  set('hm-wait',handovers.filter(h=>h.status.includes('等待')).length);
+  set('hm-shelved',handovers.filter(h=>h.status.includes('搁置')).length);
+}
+function saveHC(){
+  handovers.unshift({date:document.getElementById('hm-date').value,type:document.getElementById('hm-type').value,orderId:document.getElementById('hm-order').value,progress:document.getElementById('hm-prog').value,next:document.getElementById('hm-next').value,priority:document.getElementById('hm-pri').value,status:document.getElementById('hm-status').value,email:document.getElementById('hm-email').value,extra:document.getElementById('hm-extra').value});
+  renderHC();updateHCM();closeModal('hc-modal');
+}
+function exportHC(){dlCSV([['日期','Case事项','订单号','当前进度','下一步','优先级','状态','邮箱'],...handovers.map(h=>[h.date,h.type,h.orderId,h.progress,h.next,h.priority,h.status,h.email])],'Handover_Cases.csv');}
+
+// ── FROZEN ────────────────────────────────────────────────────
+function loadFRExcel(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,raw:false});
+      let hr=-1;for(let i=0;i<data.length;i++){if(data[i]&&String(data[i][0]).includes('交易员')){hr=i;break;}}
+      frozen=data.slice(hr<0?1:hr+1).filter(r=>r[0]).map(r=>({
+        trader:r[0]||'',date:r[1]?String(r[1]).slice(0,10):'',p4bId:r[2]||'',dpId:r[3]||'',
+        amount:parseFloat(r[4])||0,payerCN:r[5]||'',payerEN:r[6]||'',payerId:r[7]||'',
+        sales:r[8]||'',agent:r[9]||'',desc:r[11]||'',type:r[12]||'',coins:r[13]||'',coinAmt:parseFloat(r[14])||0,
+      }));
+      renderFR();updateFRM();alert(`✅ 成功导入 ${frozen.length} 条冻结记录`);
+    }catch(err){alert('解析失败：'+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+function renderFR(){
+  const s=document.getElementById('fr-search').value.toLowerCase();
+  const cf=document.getElementById('fr-coins').value;
+  const data=frozen.filter(f=>{
+    if(frFilter&&!f.type.includes(frFilter))return false;
+    if(s&&!f.trader.toLowerCase().includes(s)&&!f.p4bId.toLowerCase().includes(s)&&!f.payerCN.includes(s))return false;
+    if(cf&&f.coins!==cf)return false;return true;
+  });
+  document.getElementById('fr-empty').style.display=data.length?'none':'block';
+  document.getElementById('fr-body').innerHTML=data.map(f=>`<tr>
+    <td style="font-family:var(--mono);font-size:12px">${f.trader}</td>
+    <td style="font-family:var(--mono);font-size:12px;white-space:nowrap">${f.date}</td>
+    <td style="font-size:11px;font-family:var(--mono);max-width:130px;word-break:break-all">${f.p4bId}</td>
+    <td style="font-size:11px;font-family:var(--mono);max-width:130px;word-break:break-all">${f.dpId}</td>
+    <td style="font-family:var(--mono)">${f.amount?f.amount.toLocaleString():''}</td>
+    <td>${f.payerCN||f.payerEN||''} ${f.payerId?`<span style="color:var(--text3);font-size:11px">(${f.payerId})</span>`:''}</td>
+    <td>${frzBadge(f.type)}</td>
+    <td><span class="badge ${f.coins==='是'?'b-green':'b-gray'}">${f.coins||'—'}</span></td>
+    <td style="font-family:var(--mono)">${f.coinAmt?f.coinAmt.toFixed(2):''}</td>
+    <td style="max-width:200px;font-size:12px;color:var(--text2)">${(f.desc||'').slice(0,80)}${f.desc&&f.desc.length>80?'…':''}</td>
+    <td><button class="btn btn-sm btn-danger" onclick="frozen.splice(${frozen.indexOf(f)},1);renderFR();updateFRM()">删</button></td>
+  </tr>`).join('');
+}
+function filterFR(f,el){frFilter=f;document.querySelectorAll('#fr-chips .chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderFR();}
+function updateFRM(){
+  set('fm-total',frozen.length);
+  set('fm-jud',frozen.filter(f=>f.type.includes('司法')).length);
+  set('fm-acc',frozen.filter(f=>f.type.includes('账号')).length);
+  set('fm-cpl',frozen.filter(f=>f.type.includes('客户')||f.type.includes('客诉')).length);
+  set('fm-coins',frozen.reduce((a,f)=>a+f.coinAmt,0).toLocaleString(undefined,{maximumFractionDigits:2}));
+  set('fm-amt',frozen.reduce((a,f)=>a+f.amount,0).toLocaleString(undefined,{maximumFractionDigits:0}));
+}
+function saveFR(){
+  frozen.unshift({trader:document.getElementById('fm-trader').value,date:document.getElementById('fm-date').value,p4bId:document.getElementById('fm-p4b').value,dpId:document.getElementById('fm-dp').value,amount:parseFloat(document.getElementById('fm-ai').value)||0,payerCN:document.getElementById('fm-cn').value,payerId:document.getElementById('fm-pid').value,sales:document.getElementById('fm-sales').value,agent:document.getElementById('fm-agent').value,type:document.getElementById('fm-type').value,coins:document.getElementById('fm-coins-s').value,coinAmt:parseFloat(document.getElementById('fm-ca').value)||0,desc:document.getElementById('fm-desc').value});
+  renderFR();updateFRM();closeModal('fr-modal');
+}
+function exportFR(){dlCSV([['交易员账号','反馈日期','P4B订单号','DP订单号','金额CNY','付款人','类型','是否补币','补币USDT','描述'],...frozen.map(f=>[f.trader,f.date,f.p4bId,f.dpId,f.amount,f.payerCN,f.type,f.coins,f.coinAmt,f.desc])],'冻结记录.csv');}
+
+// ── BADGES ────────────────────────────────────────────────────
+function statusBadge(s){if(!s)return'<span class="badge b-gray">—</span>';if(s.includes('完成'))return'<span class="badge b-green">✓ 已完成</span>';if(s.includes('搁置'))return'<span class="badge b-amber">⏸ 搁置</span>';if(s.includes('进行'))return'<span class="badge b-blue">↻ 进行中</span>';return`<span class="badge b-gray">${s.slice(0,5)}</span>`;}
+function priBadge(p){if(p==='高')return'<span class="badge b-red">高</span>';if(p==='中')return'<span class="badge b-blue">中</span>';return'<span class="badge b-gray">低</span>';}
+function frzBadge(t){if(!t)return'<span class="badge b-gray">—</span>';if(t.includes('司法'))return'<span class="badge b-red">司法冻结</span>';if(t.includes('账号'))return'<span class="badge b-amber">账号冻结</span>';if(t.includes('客户')||t.includes('客诉'))return'<span class="badge b-purple">客诉</span>';if(t.includes('可疑'))return'<span class="badge b-red">可疑款项</span>';return`<span class="badge b-gray">${t}</span>`;}
+
+// ── CSV ───────────────────────────────────────────────────────
+function dlCSV(rows,name){const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=name;a.click();}
+
+// ── INIT ──────────────────────────────────────────────────────
+setTimeout(updateOrderPage,150);
+</script>
+</body>
+</html>
